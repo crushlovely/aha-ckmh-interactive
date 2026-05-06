@@ -101,6 +101,19 @@ const FILL_BRIGHT = 0.55
 const FILL_DIM = 0.18
 const FILL_FAINT = 0.1
 
+// ── Scene progress dots (visual flair / wayfinding) ────
+// Order of beats the reader walks through. Drives the persistent
+// dot indicator at the bottom of the viewport.
+const SCENE_ORDER = [
+  'oneBody', 'teammates', 'guess', 'vennIntro',
+  'hk', 'hm', 'km', 'shift', 'takeAction', 'cta',
+]
+const sceneIndex = computed(() => {
+  const idx = SCENE_ORDER.indexOf(activeSceneKey.value)
+  return idx === -1 ? 0 : idx
+})
+
+
 // ── Scene refs (for ScrollTrigger) ──
 const oneBodyScene = ref(null)
 const teammatesScene = ref(null)
@@ -118,21 +131,29 @@ const THREAD_BG = 0.4
 // tuned to fit within the pane.
 const VENN_STATES = {
   oneBody: {
-    scale: 0.42, x: 0, y: 0,
-    fills: { heart: FILL_FAINT, kidney: FILL_FAINT, metabolic: FILL_FAINT },
-    threads: { hk: 0, hm: 0, km: 0 },
+    // Hero-scale preview of the diagram-to-come, breathing with life.
+    // Full size makes it feel like the centerpiece while the breath
+    // animation provides the storytelling motion.
+    scale: 1.1, x: 0, y: 0,
+    fills: { heart: FILL_DIM, kidney: FILL_DIM, metabolic: FILL_DIM },
+    threads: { hk: 0.3, hm: 0.3, km: 0.3 },
     labels: { heart: 0, kidney: 0, metabolic: 0 },
   },
   teammates: {
-    scale: 0.6, x: 0, y: 0,
+    // Diagram is the interactive surface — the user taps a teammate name and
+    // its circle (and label) lights up. Big enough to be the focal element of
+    // the right pane. Default fills DIM so any region can stand out on tap.
+    scale: 0.9, x: 0, y: 0,
     fills: { heart: FILL_DIM, kidney: FILL_DIM, metabolic: FILL_DIM },
     threads: { hk: 0, hm: 0, km: 0 },
     labels: { heart: 0, kidney: 0, metabolic: 0 },
   },
   guess: {
-    // Venn small and present, but recessed during the stat-guess interaction
-    scale: 0.32, x: 0, y: 0,
-    fills: { heart: FILL_FAINT, kidney: FILL_FAINT, metabolic: FILL_FAINT },
+    // Venn ducks out entirely — the question and the stat reveal own the
+    // stage. Fills, threads, and labels all fade to 0; the diagram returns
+    // for the introduction beat after the reveal.
+    scale: 0.6, x: 0, y: 0,
+    fills: { heart: 0, kidney: 0, metabolic: 0 },
     threads: { hk: 0, hm: 0, km: 0 },
     labels: { heart: 0, kidney: 0, metabolic: 0 },
   },
@@ -169,20 +190,21 @@ const VENN_STATES = {
     labels: { heart: 0, kidney: 0, metabolic: 0 },
   },
   takeAction: {
-    // Venn pulled to a small badge in upper-right corner of the pane —
-    // habits grid takes the visual focus
-    scale: 0.28, x: 220, y: -130,
-    fills: { heart: FILL_DIM, kidney: FILL_DIM, metabolic: FILL_DIM },
+    // Venn ducks out — the eight habits are the entire focus of this beat.
+    // Returns at full strength on the closing CTA scene.
+    scale: 0.5, x: 0, y: 0,
+    fills: { heart: 0, kidney: 0, metabolic: 0 },
     threads: { hk: 0, hm: 0, km: 0 },
     labels: { heart: 0, kidney: 0, metabolic: 0 },
   },
   cta: {
-    // Venn smaller and corner-anchored so the CTA button can take the spotlight,
-    // still saturated with all threads as the "earned closing"
-    scale: 0.4, x: 220, y: -100,
+    // Earned closing — the Venn returns to full hero presence with all
+    // three regions saturated, threads bright, and labels on. The whole
+    // diagram is the "you've made the connection" payoff for the reader.
+    scale: 1.0, x: 0, y: 0,
     fills: { heart: FILL_BRIGHT, kidney: FILL_BRIGHT, metabolic: FILL_BRIGHT },
     threads: { hk: THREAD_FOCUS, hm: THREAD_FOCUS, km: THREAD_FOCUS },
-    labels: { heart: 0, kidney: 0, metabolic: 0 },
+    labels: { heart: 1, kidney: 1, metabolic: 1 },
   },
   stub: {
     scale: 0.45, x: 0, y: 0,
@@ -228,13 +250,20 @@ function brightenRegion(regionId) {
     kidney: kidneyFill.value,
     metabolic: metabolicFill.value,
   }
+  const labelRefs = {
+    heart: heartLabel.value,
+    kidney: kidneyLabel.value,
+    metabolic: metabolicLabel.value,
+  }
   const others = Object.keys(fillRefs).filter((k) => k !== regionId)
 
   const target = fillRefs[regionId]
   if (!target) return
   gsap.to(target, { fillOpacity: FILL_BRIGHT, duration: 0.6, ease: 'power2.out' })
+  gsap.to(labelRefs[regionId], { opacity: 1, duration: 0.6, ease: 'power2.out' })
   others.forEach((k) => {
     gsap.to(fillRefs[k], { fillOpacity: FILL_DIM, duration: 0.6, ease: 'power2.out' })
+    gsap.to(labelRefs[k], { opacity: 0, duration: 0.6, ease: 'power2.out' })
   })
 }
 
@@ -242,12 +271,83 @@ function resetRegions() {
   ;[heartFill.value, kidneyFill.value, metabolicFill.value].forEach((el) => {
     if (el) gsap.to(el, { fillOpacity: FILL_DIM, duration: 0.6, ease: 'power2.out' })
   })
+  ;[heartLabel.value, kidneyLabel.value, metabolicLabel.value].forEach((el) => {
+    if (el) gsap.to(el, { opacity: 0, duration: 0.6, ease: 'power2.out' })
+  })
 }
 
 // When a teammate is closed (no openTeammate), reset to faint baseline
 watch(openTeammate, (newVal) => {
   if (newVal === null) resetRegions()
 })
+
+// ── oneBody breathing animation ─────────────────
+// A 3-phase looping timeline for the opening Venn:
+//   1. Each circle cycles independently, in offset stagger.
+//   2. All three saturate together to a stronger peak.
+//   3. All three desaturate back down together.
+//   ↻ Loop.
+// Total cycle ≈ 11s. Stops when the scene changes; per-scene fills
+// are restored by the next applyVennState call.
+let breathTimeline = null
+const BREATH_PEAK_INDIVIDUAL = 0.5
+const BREATH_PEAK_ALL = 0.65 // higher peak when all three saturate together
+const BREATH_INDIVIDUAL_DUR = 1.6 // half-cycle of each individual swell
+const BREATH_INDIVIDUAL_STAGGER = 1.1 // delay between each circle's start
+const BREATH_SYNTH_DUR = 2.2 // duration of the all-rise / all-dim phases
+
+function startOneBodyBreath() {
+  stopOneBodyBreath()
+  if (!heartFill.value) return
+
+  const fills = [heartFill.value, kidneyFill.value, metabolicFill.value]
+  const tl = gsap.timeline({ repeat: -1 })
+
+  // Phase 1: each circle does one full swell (dim → peak → dim), staggered.
+  fills.forEach((el, j) => {
+    tl.fromTo(
+      el,
+      { fillOpacity: FILL_DIM },
+      {
+        fillOpacity: BREATH_PEAK_INDIVIDUAL,
+        duration: BREATH_INDIVIDUAL_DUR,
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: 1, // up + down = one full swell
+      },
+      j * BREATH_INDIVIDUAL_STAGGER,
+    )
+  })
+
+  // Phase 2: all three rise together to a stronger collective peak.
+  // Anchored to start after the last individual swell finishes.
+  const phase2Start = (fills.length - 1) * BREATH_INDIVIDUAL_STAGGER + BREATH_INDIVIDUAL_DUR * 2
+  tl.to(
+    fills,
+    {
+      fillOpacity: BREATH_PEAK_ALL,
+      duration: BREATH_SYNTH_DUR,
+      ease: 'sine.inOut',
+    },
+    phase2Start + 0.4, // small held-breath pause before the collective rise
+  )
+
+  // Phase 3: all three desaturate together back to dim.
+  tl.to(fills, {
+    fillOpacity: FILL_DIM,
+    duration: BREATH_SYNTH_DUR,
+    ease: 'sine.inOut',
+  })
+
+  breathTimeline = tl
+}
+
+function stopOneBodyBreath() {
+  if (breathTimeline) {
+    breathTimeline.kill()
+    breathTimeline = null
+  }
+}
 
 // ── Shift scene: dim/recover sub-timeline ──
 const shiftPlayed = ref(false)
@@ -326,9 +426,14 @@ function getCurrentSceneKey() {
 function onScroll() {
   const key = getCurrentSceneKey()
   if (key !== activeSceneKey.value) {
+    const prevKey = activeSceneKey.value
     activeSceneKey.value = key
+    // Stop the breath BEFORE applying the new state so its tweens don't
+    // race against applyVennState's fillOpacity tweens for the next scene.
+    if (prevKey === 'oneBody' && key !== 'oneBody') stopOneBodyBreath()
     applyVennState(key)
     if (key === 'shift') playShift()
+    if (key === 'oneBody') startOneBodyBreath()
   }
 }
 
@@ -338,6 +443,8 @@ function setupSceneObserver() {
   // Initial Venn state
   activeSceneKey.value = getCurrentSceneKey()
   applyVennState(activeSceneKey.value, false)
+  if (activeSceneKey.value === 'oneBody') startOneBodyBreath()
+  else stopOneBodyBreath()
 
   // Attach scroll listener
   if (scrollHandler) window.removeEventListener('scroll', scrollHandler)
@@ -370,6 +477,7 @@ onBeforeUnmount(() => {
     window.removeEventListener('scroll', scrollHandler)
     scrollHandler = null
   }
+  stopOneBodyBreath()
 })
 
 // Re-run setup when persona is set (the experience div becomes visible only then)
@@ -435,6 +543,32 @@ watch(personaIsSet, (isSet) => {
         <span class="v7-persona-switch__change">change</span>
       </button>
 
+      <!-- Scene progress dots — wayfinding indicator at bottom of viewport.
+           Echoes the AHA flyer's dotted-pattern motif. -->
+      <nav class="v7-progress" aria-label="Progress through the experience">
+        <ol class="v7-progress__list">
+          <li
+            v-for="(key, j) in SCENE_ORDER"
+            :key="key"
+            class="v7-progress__dot"
+            :class="{
+              'is-current': j === sceneIndex,
+              'is-visited': j < sceneIndex,
+            }"
+          ></li>
+        </ol>
+      </nav>
+
+      <!-- Color backdrop — soft multi-toned wash using all three brand
+           colors at very low saturation. Fades in only on the opening
+           scene to give it a distinct, warm atmosphere before the journey
+           transitions to clean white for the rest of the experience. -->
+      <div
+        class="v7-bg-tint"
+        :class="{ 'is-shown': activeSceneKey === 'oneBody' }"
+        aria-hidden="true"
+      ></div>
+
       <!-- Persistent Venn (fixed in viewport, behind scene content) -->
       <div ref="vennEl" class="v7-venn" aria-hidden="true">
         <svg
@@ -456,10 +590,12 @@ watch(personaIsSet, (isSet) => {
               <stop offset="100%" stop-color="#0a5c8a" stop-opacity="0" />
             </radialGradient>
             <radialGradient id="v7-wash-metabolic" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#e2a52b" stop-opacity="0.85" />
-              <stop offset="55%" stop-color="#e2a52b" stop-opacity="0.55" />
-              <stop offset="85%" stop-color="#e2a52b" stop-opacity="0.2" />
-              <stop offset="100%" stop-color="#e2a52b" stop-opacity="0" />
+              <!-- Deeper amber and higher opacity stops than the default
+                   so the gold reads as saturated as the heart and kidney. -->
+              <stop offset="0%" stop-color="#c98014" stop-opacity="1" />
+              <stop offset="55%" stop-color="#c98014" stop-opacity="0.7" />
+              <stop offset="85%" stop-color="#c98014" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="#c98014" stop-opacity="0" />
             </radialGradient>
             <filter id="v7-bleed" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
@@ -686,6 +822,16 @@ watch(personaIsSet, (isSet) => {
                   {{ content.guess.incorrectVerdict }}
                 </span>
               </p>
+              <!-- Stat visualization: 10 dots, 9 filled. Reinforces the
+                   "9 in 10" stat using the same dot-motif as the AHA flyer. -->
+              <ol class="v7-stat-dots" aria-hidden="true">
+                <li
+                  v-for="n in 10"
+                  :key="n"
+                  class="v7-stat-dots__dot"
+                  :class="{ 'is-filled': n <= 9 }"
+                ></li>
+              </ol>
               <p class="v7-guess__big-stat">{{ content.guess.answer }}</p>
               <p class="v7-guess__answer-line">
                 {{ content.guess.answerLine }}
@@ -1317,8 +1463,7 @@ watch(personaIsSet, (isSet) => {
   pointer-events: auto;
 }
 
-/* Tall-content scenes (takeAction, cta) flow naturally — their Venn is a
-   small corner badge so there's no pane conflict. */
+/* Tall-content scenes flow naturally instead of being fixed-positioned. */
 .v7-scene--take-action .v7-scene__inner,
 .v7-scene--cta .v7-scene__inner {
   position: relative;
@@ -1326,8 +1471,19 @@ watch(personaIsSet, (isSet) => {
   left: auto;
   transform: none;
   pointer-events: auto;
-  margin-top: clamp(2rem, 7vh, 4rem);
   padding: 0;
+}
+
+/* takeAction — Venn is a small corner badge so content can sit near the top */
+.v7-scene--take-action .v7-scene__inner {
+  margin-top: clamp(2rem, 7vh, 4rem);
+}
+
+/* cta — the closing-hero Venn fills the top stage zone, so push the content
+   below it just like the captioned scenes do. */
+.v7-scene--cta .v7-scene__inner {
+  margin-top: 56vh;
+  margin-top: 56svh;
 }
 
 /* Connection scenes (5–7) — sized narrower for headline focus */
@@ -1823,13 +1979,16 @@ watch(personaIsSet, (isSet) => {
 }
 
 /* ── Scene 10: CTA ─────────────────────────────── */
-.v7-scene--cta .v7-scene__inner {
-  margin-top: auto;
-  margin-bottom: auto;
-}
+/* Mobile margin-top is set in the unified tall-content block above so the
+   content drops below the closing-hero Venn pane. */
 
 .v7-scene__inner--cta {
   max-width: 32rem;
+  /* Flex column so the button and secondary link stack vertically and
+     `align-self: flex-start` works as intended on each. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .v7-overline--accent {
@@ -2031,6 +2190,206 @@ watch(personaIsSet, (isSet) => {
 .v7-teammates-expand-leave-from {
   opacity: 1;
   max-height: 12rem;
+}
+
+/* ── Desktop layout (≥ 960px) ─────────────────────
+   Switch from stacked (Venn top / text bottom) to side-by-side
+   (text left / Venn right). This is the editorial-scrollytelling
+   layout: a fixed visual pane on the right, copy that scrolls
+   through fixed positions on the left. */
+@media (min-width: 960px) {
+  /* Venn moves from top zone (full width, 55vh) to right pane
+     (full height, 50vw). */
+  .v7-venn {
+    top: 0;
+    bottom: 0;
+    left: auto;
+    right: 0;
+    width: 50vw;
+    height: 100vh;
+    height: 100svh;
+  }
+
+  .v7-venn__svg {
+    width: min(80%, 540px);
+    max-height: 80%;
+  }
+
+  /* Scene copy lives in the left pane, vertically centered for the
+     editorial caption feel. Mobile's bottom-anchored layout is replaced. */
+  .v7-scene__inner {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    right: 50vw;
+    bottom: auto;
+    transform: translateY(-50%);
+    width: auto;
+    max-width: none;
+    padding: 0 clamp(2rem, 4vw, 4rem) 0 clamp(3rem, 6vw, 6rem);
+  }
+
+  /* Inner content stays at a comfortable text measure within the pane,
+     anchored toward the right edge of the left pane so it sits closer
+     to the Venn. */
+  .v7-scene__inner > * {
+    max-width: 32rem;
+    margin-left: auto;
+  }
+
+  /* Tall-content scenes: natural-flow layout. cta keeps the left-pane
+     constraint so its hero Venn has the right pane. takeAction has no
+     Venn so its content can span the full viewport. */
+  .v7-scene--take-action .v7-scene__inner,
+  .v7-scene--cta .v7-scene__inner {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    transform: none;
+    margin-top: clamp(3rem, 8vh, 6rem);
+    padding: 0;
+  }
+
+  .v7-scene--take-action .v7-scene__inner > *,
+  .v7-scene--cta .v7-scene__inner > * {
+    margin-left: 0;
+  }
+
+  /* cta keeps left-pane constraint (Venn lives in right pane) */
+  .v7-scene--cta .v7-scene__inner {
+    margin-left: clamp(3rem, 6vw, 6rem);
+    margin-right: 50vw;
+    padding: 0 clamp(2rem, 4vw, 4rem) 0 0;
+    max-width: 32rem;
+  }
+
+  /* takeAction has no Venn — content centers on full viewport */
+  .v7-scene--take-action .v7-scene__inner {
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 clamp(2rem, 5vw, 4rem);
+    max-width: 42rem;
+  }
+
+  /* Persona switcher — move to bottom-left so it doesn't sit over the Venn pane */
+  .v7-persona-switch {
+    right: auto;
+    left: clamp(0.75rem, 2vw, 1.25rem);
+  }
+
+  /* Guess scene — Venn is hidden during this beat, so let the question and
+     reveal cascade center across the full viewport instead of crammed in
+     the left pane. */
+  .v7-scene--guess .v7-scene__inner {
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    width: auto;
+    max-width: 38rem;
+    padding: 0 clamp(2rem, 5vw, 4rem);
+  }
+
+  .v7-scene--guess .v7-scene__inner > * {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* ── Visual flair: dot patterns ───────────────────
+   Two related additions echoing the AHA flyer's dotted motif:
+   1. v7-progress: a bottom-fixed row of 10 dots showing journey progress.
+   2. v7-stat-dots: a row of 10 dots used to visualize the "9 in 10" stat. */
+
+.v7-progress {
+  position: fixed;
+  bottom: clamp(0.85rem, 2vh, 1.4rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  pointer-events: none;
+}
+
+.v7-progress__list {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.v7-progress__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--ink-faint);
+  opacity: 0.55;
+  transition:
+    background 350ms ease,
+    border-color 350ms ease,
+    transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 350ms ease;
+}
+
+.v7-progress__dot.is-visited {
+  background: var(--ink-faint);
+  border-color: var(--ink-faint);
+  opacity: 0.55;
+}
+
+.v7-progress__dot.is-current {
+  background: var(--accent);
+  border-color: var(--accent);
+  opacity: 1;
+  transform: scale(1.5);
+}
+
+/* Color backdrop wash — three soft radial gradients using the heart, kidney,
+   and metabolic brand colors. Lives behind everything (z-index 0) and only
+   shows on its scene. Creates an atmospheric, warm opening. */
+.v7-bg-tint {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 78% 22%, rgba(193, 14, 33, 0.18), transparent 55%),
+    radial-gradient(circle at 25% 75%, rgba(226, 165, 43, 0.14), transparent 55%),
+    radial-gradient(circle at 88% 82%, rgba(10, 92, 138, 0.12), transparent 50%);
+  transition: opacity 800ms cubic-bezier(0.2, 0.65, 0.3, 1);
+}
+
+.v7-bg-tint.is-shown {
+  opacity: 1;
+}
+
+/* Stat visualization for the post-reveal "9 in 10" cascade */
+.v7-stat-dots {
+  list-style: none;
+  display: flex;
+  gap: 7px;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.v7-stat-dots__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1.5px solid var(--ink-faint);
+  opacity: 0.55;
+  transition: background 400ms ease, border-color 400ms ease, opacity 400ms ease;
+}
+
+.v7-stat-dots__dot.is-filled {
+  background: var(--accent);
+  border-color: var(--accent);
+  opacity: 1;
 }
 
 /* ── Reduced motion ───────────────────────────── */
