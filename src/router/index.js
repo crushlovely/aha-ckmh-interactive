@@ -5,6 +5,7 @@ import V3View from '../views/V3View.vue'
 import V4View from '../views/V4View.vue'
 import V5View from '../views/V5View.vue'
 import V7View from '../views/V7View.vue'
+import V8View from '../views/V8View.vue'
 
 const router = createRouter({
   history: process.env.NODE_ENV === 'production' ? createWebHashHistory() : createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,11 @@ const router = createRouter({
       path: '/v7',
       name: 'v7',
       component: V7View,
+    },
+    {
+      path: '/v8',
+      name: 'v8',
+      component: V8View,
     },
   ],
 })
