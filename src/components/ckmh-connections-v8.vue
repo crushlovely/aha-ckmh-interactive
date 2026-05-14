@@ -30,11 +30,11 @@ function openPersonaSwitcher() {
 }
 
 const welcomeForPersona = computed(
-  () => content.oneBody.welcome[persona.value] || content.oneBody.welcome.curious,
+  () => content.oneBody.welcome[persona.value] || content.oneBody.welcome.novice,
 )
 
 const ctaForPersona = computed(
-  () => content.cta.byPersona[persona.value] || content.cta.byPersona.curious,
+  () => content.cta.byPersona[persona.value] || content.cta.byPersona.novice,
 )
 
 // ── Scene 9: Take Action ──
@@ -597,9 +597,6 @@ watch(personaIsSet, (isSet) => {
           <ul class="ckmh-selector__options">
             <li v-for="(id, j) in PERSONA_ORDER" :key="id" :style="{ '--i': j }">
               <button type="button" class="ckmh-selector__option" @click="selectPersona(id)">
-                <span class="ckmh-selector__option-letter">
-                  {{ String.fromCharCode(65 + j) }}
-                </span>
                 <span class="ckmh-selector__option-label">
                   {{ PERSONAS[id].label }}
                 </span>
@@ -838,14 +835,22 @@ watch(personaIsSet, (isSet) => {
         }"
       >
         <div class="ckmh-scene__inner ckmh-scene__inner--guess">
-          <p class="ckmh-overline">{{ content.guess.overline }}</p>
-          <p class="ckmh-guess__framing">
-            {{ content.guess.framing[persona] || content.guess.framing.curious }}
-          </p>
-
           <Transition name="ckmh-guess-swap" mode="out-in">
             <!-- Pre-reveal: question + tap to reveal -->
             <div v-if="!revealed" key="prompt" class="ckmh-reveal-prompt">
+              <p class="ckmh-overline">{{ content.guess.overline }}</p>
+              <p class="ckmh-guess__framing">
+                {{ content.guess.framing[persona] || content.guess.framing.novice }}
+              </p>
+              <ol class="ckmh-stat-dots" aria-hidden="true">
+                <li
+                  v-for="n in 10"
+                  :key="n"
+                  class="ckmh-stat-dots__dot"
+                  :class="{ 'is-filled': n <= 0 }"
+                ></li>
+              </ol>
+
               <h2 class="ckmh-headline ckmh-headline--question">
                 {{ content.guess.question }}
               </h2>
@@ -1353,29 +1358,6 @@ watch(personaIsSet, (isSet) => {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(193, 14, 33, 0.18);
-}
-
-.ckmh-selector__option-letter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: 50%;
-  background: var(--paper-alt);
-  color: var(--ink-soft);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  flex-shrink: 0;
-  transition:
-    background 200ms ease,
-    color 200ms ease;
-}
-
-.ckmh-selector__option:hover .ckmh-selector__option-letter {
-  background: var(--accent);
-  color: #fff;
 }
 
 .ckmh-selector__option-label {

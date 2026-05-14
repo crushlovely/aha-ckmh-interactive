@@ -6,29 +6,24 @@
 // real persona-specific destinations once the AHA team confirms.
 
 export const PERSONAS = {
-  curious: {
-    id: 'curious',
-    label: "I'm curious about CKM health",
-    short: 'Curious',
+  novice: {
+    id: 'novice',
+    label: "I'm new to this topic",
+    short: 'New',
   },
-  diagnosed: {
-    id: 'diagnosed',
-    label: "I've recently been diagnosed",
-    short: 'Diagnosed',
+  familiar: {
+    id: 'familiar',
+    label: 'I know the basics',
+    short: 'Familiar',
   },
-  family: {
-    id: 'family',
-    label: 'Someone close to me has been diagnosed',
-    short: 'Family',
-  },
-  clinician: {
-    id: 'clinician',
-    label: "I'm a healthcare professional",
-    short: 'Clinician',
+  professional: {
+    id: 'professional',
+    label: 'I want detailed / professional info',
+    short: 'Pro',
   },
 }
 
-export const PERSONA_ORDER = ['curious', 'diagnosed', 'family', 'clinician']
+export const PERSONA_ORDER = ['novice', 'familiar', 'professional']
 
 export const v8Content = {
   // Scene 1 — Audience selector
@@ -44,10 +39,10 @@ export const v8Content = {
     headline: 'One body. One system.',
     body: 'Your heart, kidneys, and the way your body creates energy work together. When you take care of one, the others benefit too.',
     welcome: {
-      curious: "You're going to learn how your body works as a team.",
-      diagnosed: "Take a breath. Let's walk through what this means — and what you can do.",
-      family: "Here's what your loved one is dealing with, and how you can help.",
-      clinician: 'A patient-facing primer on CKM health messaging.',
+      novice: "You're going to learn how your body works as a team — in plain language.",
+      familiar: "You know the basics. Here's a deeper look at how the pieces connect.",
+      professional:
+        'A consumer-facing primer on CKM health and the cardiovascular-kidney-metabolic connection.',
     },
   },
 
@@ -83,10 +78,9 @@ export const v8Content = {
   guess: {
     overline: 'A quick question',
     framing: {
-      curious: "Here's something most people don't realize.",
-      diagnosed: "If this feels overwhelming — you're not alone.",
-      family: "Most people don't know how common this is.",
-      clinician: 'Patient-facing prevalence framing for context.',
+      novice: "Here's something most people don't realize.",
+      familiar: 'You may know the basics — but the scale of it might surprise you.',
+      professional: 'Patient-facing prevalence framing for context.',
     },
     question: 'How many U.S. adults have at least one risk factor for CKM syndrome?',
     revealCue: 'Tap to reveal',
@@ -145,7 +139,7 @@ export const v8Content = {
   ckmStages: {
     intro: {
       overline: 'CKM Syndrome',
-      headline: 'CKM syndrome happens in stages.',
+      headline: 'CKM syndrome is described in stages.',
       body: "It's not a single disease — it's several connected conditions that can build on each other over time. Understanding the stages helps you act early.",
     },
     stages: [
@@ -168,7 +162,8 @@ export const v8Content = {
         overline: 'Stage 2 of 4',
         headline: 'Kidney involvement.',
         body: 'Kidney function begins to decline, or metabolic risk factors have become more severe. The kidneys and heart are beginning to feel the strain together.',
-        whatHelps: 'Monitoring all five numbers, working with your care team, and medication when needed can slow progression.',
+        whatHelps:
+          'Monitoring all five numbers, working with your care team, and medication when needed can slow progression.',
       },
       {
         id: 'stage3',
@@ -182,8 +177,10 @@ export const v8Content = {
         overline: 'Stage 4 of 4',
         headline: 'Cardiovascular disease.',
         body: 'A heart attack, stroke, heart failure, or another cardiovascular event has occurred alongside CKM risk factors. Managing all three systems together is critical.',
-        whatHelps: 'Comprehensive care with your full care team, ongoing treatment, and lifestyle support.',
-        closing: 'Many aspects of CKM syndrome are preventable, treatable, and sometimes reversible.',
+        whatHelps:
+          'Comprehensive care with your full care team, ongoing treatment, and lifestyle support.',
+        closing:
+          'Many aspects of CKM syndrome are preventable, treatable, and sometimes reversible.',
       },
     ],
   },
@@ -208,8 +205,7 @@ export const v8Content = {
         id: 'eat-better',
         name: 'Eat Better',
         why: 'What you eat shapes your blood pressure, blood sugar, weight, and cholesterol — all at once.',
-        firstStep:
-          'Add one vegetable to a meal today. Choose water over soda.',
+        firstStep: 'Add one vegetable to a meal today. Choose water over soda.',
         resources: [
           {
             label: 'Healthy eating basics',
@@ -261,8 +257,7 @@ export const v8Content = {
         id: 'weight',
         name: 'Manage Weight',
         why: 'Weight around your waist drives high blood pressure, diabetes risk, and kidney strain.',
-        firstStep:
-          'Small, consistent changes beat crash diets. Track your waist size.',
+        firstStep: 'Small, consistent changes beat crash diets. Track your waist size.',
         resources: [
           {
             label: 'Losing weight',
@@ -288,8 +283,7 @@ export const v8Content = {
         id: 'glucose',
         name: 'Manage Blood Sugar',
         why: 'High blood sugar damages your blood vessels, kidneys, and nerves over years.',
-        firstStep:
-          'Watch added sugars. Move after meals. Get a blood glucose test.',
+        firstStep: 'Watch added sugars. Move after meals. Get a blood glucose test.',
         resources: [
           {
             label: 'Diabetes overview',
@@ -321,7 +315,7 @@ export const v8Content = {
     body: 'Most adults already have at least one CKM risk factor. A checkup of your heart, kidney, and metabolic health can catch quiet risks early — and start the connections working in your favor.',
     recap: 'Five things to measure. Eight habits to start. One conversation with your care team.',
     byPersona: {
-      curious: {
+      novice: {
         primary: {
           label: 'Schedule a checkup',
           url: 'https://www.heart.org/myCKMhealth',
@@ -333,31 +327,19 @@ export const v8Content = {
           placeholder: true,
         },
       },
-      diagnosed: {
+      familiar: {
         primary: {
           label: 'Bring this to your care team',
           url: 'https://www.heart.org/myCKMhealth',
           placeholder: true,
         },
         secondary: {
-          label: 'Conversation guide for your next visit',
+          label: 'Know your five numbers',
           url: 'https://www.heart.org/myCKMhealth',
           placeholder: true,
         },
       },
-      family: {
-        primary: {
-          label: 'Caregiver resources',
-          url: 'https://www.heart.org/myCKMhealth',
-          placeholder: true,
-        },
-        secondary: {
-          label: 'Support groups and guides',
-          url: 'https://www.heart.org/myCKMhealth',
-          placeholder: true,
-        },
-      },
-      clinician: {
+      professional: {
         primary: {
           label: 'Patient education materials',
           url: 'https://www.heart.org/myCKMhealth',
@@ -379,9 +361,7 @@ const COOKIE_DAYS = 30
 
 export function readPersonaCookie() {
   if (typeof document === 'undefined') return null
-  const match = document.cookie.match(
-    new RegExp('(?:^|; )' + COOKIE_NAME + '=([^;]+)'),
-  )
+  const match = document.cookie.match(new RegExp('(?:^|; )' + COOKIE_NAME + '=([^;]+)'))
   if (!match) return null
   const val = decodeURIComponent(match[1])
   return PERSONA_ORDER.includes(val) ? val : null
@@ -390,8 +370,6 @@ export function readPersonaCookie() {
 export function writePersonaCookie(personaId) {
   if (typeof document === 'undefined') return
   if (!PERSONA_ORDER.includes(personaId)) return
-  const expires = new Date(
-    Date.now() + COOKIE_DAYS * 24 * 60 * 60 * 1000,
-  ).toUTCString()
+  const expires = new Date(Date.now() + COOKIE_DAYS * 24 * 60 * 60 * 1000).toUTCString()
   document.cookie = `${COOKIE_NAME}=${encodeURIComponent(personaId)}; expires=${expires}; path=/; SameSite=Lax`
 }
