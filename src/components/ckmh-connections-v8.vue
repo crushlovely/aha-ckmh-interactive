@@ -65,9 +65,13 @@ const ctaForPersona = computed(
 )
 
 // ── Scene 9: Take Action ──
-const expandedHabit = ref(null)
-function toggleHabit(id) {
-  expandedHabit.value = expandedHabit.value === id ? null : id
+const selectedHabit = ref(null)
+const selectedHabitData = computed(
+  () => content.takeAction.habits.find((h) => h.id === selectedHabit.value) ?? null,
+)
+
+function selectHabit(id) {
+  selectedHabit.value = selectedHabit.value === id ? null : id
 }
 
 // ── Scene 4: stat reveal ──
@@ -1114,58 +1118,50 @@ watch(personaIsSet, (isSet) => {
           <p class="ckmh-overline">{{ content.takeAction.overline }}</p>
           <h2 class="ckmh-headline">{{ content.takeAction.headline }}</h2>
           <p class="ckmh-body">{{ content.takeAction.body }}</p>
-          <ul class="ckmh-habits">
-            <li
-              v-for="(habit, j) in content.takeAction.habits"
-              :key="habit.id"
-              class="ckmh-habits__item"
-              :class="{ 'is-open': expandedHabit === habit.id }"
-              :style="{ '--i': j }"
-            >
+          <ul class="ckmh-habits-grid">
+            <li v-for="(habit, j) in content.takeAction.habits" :key="habit.id">
               <button
                 type="button"
-                class="ckmh-habits__button"
-                :aria-expanded="expandedHabit === habit.id"
-                @click="toggleHabit(habit.id)"
+                class="ckmh-habits-grid__btn"
+                :class="{ 'is-active': selectedHabit === habit.id }"
+                :aria-expanded="selectedHabit === habit.id"
+                @click="selectHabit(habit.id)"
               >
-                <span class="ckmh-habits__num">{{ String(j + 1).padStart(2, '0') }}</span>
-                <span class="ckmh-habits__name">{{ habit.name }}</span>
-                <span class="ckmh-habits__chevron" aria-hidden="true">
-                  {{ expandedHabit === habit.id ? '−' : '+' }}
-                </span>
+                <span class="ckmh-habits-grid__num">{{ String(j + 1).padStart(2, '0') }}</span>
+                <span class="ckmh-habits-grid__name">{{ habit.name }}</span>
               </button>
-              <Transition name="ckmh-habits-expand">
-                <div v-if="expandedHabit === habit.id" class="ckmh-habits__detail">
-                  <p v-if="habit.why" class="ckmh-habits__why">
-                    {{ habit.why }}
-                  </p>
-                  <p class="ckmh-habits__step">
-                    <span class="ckmh-habits__step-label">Try this:</span>
-                    {{ habit.firstStep }}
-                  </p>
-                  <ul class="ckmh-habits__resources">
-                    <li v-for="r in habit.resources" :key="r.url" class="ckmh-habits__resource">
-                      <a
-                        :href="r.url"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="ckmh-habits__resource-link"
-                      >
-                        {{ r.label }} ↗
-                      </a>
-                      <span
-                        v-if="r.placeholder"
-                        class="ckmh-habits__resource-flag"
-                        title="Resource link placeholder — needs AHA validation"
-                      >
-                        placeholder
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-              </Transition>
             </li>
           </ul>
+
+          <Transition name="ckmh-habit-detail">
+            <div v-if="selectedHabitData" class="ckmh-habit-detail">
+              <h3 class="ckmh-habit-detail__name">{{ selectedHabitData.name }}</h3>
+              <p class="ckmh-habit-detail__why">{{ selectedHabitData.why }}</p>
+              <p class="ckmh-habit-detail__step">
+                <span class="ckmh-habit-detail__step-label">Try this:</span>
+                {{ selectedHabitData.firstStep }}
+              </p>
+              <ul class="ckmh-habit-detail__resources">
+                <li
+                  v-for="r in selectedHabitData.resources"
+                  :key="r.url"
+                  class="ckmh-habit-detail__resource"
+                >
+                  <a
+                    :href="r.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="ckmh-habit-detail__resource-link"
+                  >{{ r.label }} ↗</a>
+                  <span
+                    v-if="r.placeholder"
+                    class="ckmh-habits__resource-flag"
+                    title="Resource link placeholder — needs AHA validation"
+                  >placeholder</span>
+                </li>
+              </ul>
+            </div>
+          </Transition>
           <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
@@ -1959,101 +1955,98 @@ watch(personaIsSet, (isSet) => {
   max-width: 36rem;
 }
 
-.ckmh-habits {
+/* ── Habit grid ── */
+.ckmh-habits-grid {
   list-style: none;
   margin: 1.25rem 0 0;
   padding: 0;
   display: grid;
-  gap: 0.55rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
 }
 
-.ckmh-habits__button {
+.ckmh-habits-grid__btn {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.6rem;
   width: 100%;
   background: var(--paper);
   border: 1.5px solid var(--rule);
-  border-radius: 0.65rem;
-  padding: 0.85rem 1rem;
+  border-radius: 0.6rem;
+  padding: 0.7rem 0.85rem;
   font-family: inherit;
   text-align: left;
   cursor: pointer;
-  transition:
-    border-color 200ms ease,
-    transform 200ms ease,
-    box-shadow 200ms ease;
+  transition: border-color 200ms ease, background 200ms ease;
 }
 
-.ckmh-habits__button:hover,
-.ckmh-habits__button:focus-visible {
+.ckmh-habits-grid__btn:hover,
+.ckmh-habits-grid__btn:focus-visible {
   border-color: var(--ink);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(45, 45, 45, 0.07);
   outline: none;
 }
 
-.ckmh-habits__item.is-open .ckmh-habits__button {
+.ckmh-habits-grid__btn.is-active {
   border-color: var(--accent);
+  background: rgba(193, 14, 33, 0.04);
 }
 
-.ckmh-habits__num {
+.ckmh-habits-grid__num {
   font-family: inherit;
+  font-size: 0.7rem;
   font-weight: 700;
-  font-size: 0.78rem;
   letter-spacing: 0.06em;
   color: var(--accent);
   flex-shrink: 0;
-  width: 1.65rem;
-  text-align: center;
 }
 
-.ckmh-habits__name {
-  flex: 1;
+.ckmh-habits-grid__name {
   font-family: inherit;
+  font-size: 0.88rem;
   font-weight: 600;
-  font-size: 1rem;
   color: var(--ink);
+  line-height: 1.2;
 }
 
-.ckmh-habits__chevron {
-  font-size: 1.2rem;
-  color: var(--ink-faint);
-  font-weight: 400;
-  width: 1rem;
-  text-align: center;
-}
-
-.ckmh-habits__detail {
-  padding: 0.75rem 1rem 1rem;
+/* ── Habit detail panel ── */
+.ckmh-habit-detail {
+  margin-top: 0.85rem;
+  padding: 1rem 1.1rem 1.25rem;
   background: var(--paper-alt);
-  border-radius: 0 0 0.5rem 0.5rem;
-  margin: -0.25rem 0.25rem 0;
+  border-radius: 0.65rem;
   border-left: 3px solid var(--accent);
 }
 
-.ckmh-habits__why {
+.ckmh-habit-detail__name {
   font-family: inherit;
-  font-weight: 400;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--ink-soft);
-  margin: 0 0 0.65rem;
-  font-style: italic;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 0.55rem;
+  line-height: 1.2;
 }
 
-.ckmh-habits__step {
+.ckmh-habit-detail__why {
   font-family: inherit;
+  font-size: 0.88rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  margin: 0 0 0.75rem;
+}
+
+.ckmh-habit-detail__step {
+  font-family: inherit;
+  font-size: 0.92rem;
   font-weight: 600;
-  font-size: 0.95rem;
-  line-height: 1.5;
   color: var(--ink);
+  line-height: 1.5;
   margin: 0 0 0.6rem;
 }
 
-.ckmh-habits__step-label {
+.ckmh-habit-detail__step-label {
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2061,32 +2054,32 @@ watch(personaIsSet, (isSet) => {
   margin-right: 0.4rem;
 }
 
-.ckmh-habits__resources {
+.ckmh-habit-detail__resources {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
-.ckmh-habits__resource {
+.ckmh-habit-detail__resource {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
 
-.ckmh-habits__resource-link {
+.ckmh-habit-detail__resource-link {
   font-family: inherit;
+  font-size: 0.88rem;
   font-weight: 500;
-  font-size: 0.9rem;
   color: var(--accent);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
 
-.ckmh-habits__resource-link:hover {
+.ckmh-habit-detail__resource-link:hover {
   color: var(--accent-hover);
 }
 
@@ -2103,24 +2096,16 @@ watch(personaIsSet, (isSet) => {
   cursor: help;
 }
 
-.ckmh-habits-expand-enter-active,
-.ckmh-habits-expand-leave-active {
-  transition:
-    opacity 250ms ease,
-    transform 250ms ease,
-    max-height 280ms ease;
-  overflow: hidden;
+/* ── Detail panel transition ── */
+.ckmh-habit-detail-enter-active,
+.ckmh-habit-detail-leave-active {
+  transition: opacity 220ms ease, transform 220ms ease;
 }
-.ckmh-habits-expand-enter-from,
-.ckmh-habits-expand-leave-to {
+
+.ckmh-habit-detail-enter-from,
+.ckmh-habit-detail-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
-  max-height: 0;
-}
-.ckmh-habits-expand-enter-to,
-.ckmh-habits-expand-leave-from {
-  opacity: 1;
-  max-height: 14rem;
+  transform: translateY(-0.4rem);
 }
 
 /* ── Scene 10: CTA ─────────────────────────────── */
