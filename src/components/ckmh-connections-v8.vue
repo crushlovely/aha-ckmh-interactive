@@ -29,6 +29,33 @@ function openPersonaSwitcher() {
   persona.value = null
 }
 
+function scrollToNextScene() {
+  const currentIdx = SCENE_ORDER.indexOf(activeSceneKey.value)
+  if (currentIdx === -1 || currentIdx >= SCENE_ORDER.length - 1) return
+  const nextKey = SCENE_ORDER[currentIdx + 1]
+  const sceneRefMap = {
+    oneBody: oneBodyScene,
+    teammates: teammatesScene,
+    guess: guessScene,
+    guessStats: guessStatsScene,
+    vennIntro: vennIntroScene,
+    hk: hkScene,
+    hm: hmScene,
+    km: kmScene,
+    shift: shiftScene,
+    ckmStagesIntro: ckmStagesIntroScene,
+    ckmStage0: ckmStage0Scene,
+    ckmStage1: ckmStage1Scene,
+    ckmStage2: ckmStage2Scene,
+    ckmStage3: ckmStage3Scene,
+    ckmStage4: ckmStage4Scene,
+    takeAction: takeActionScene,
+    cta: ctaScene,
+  }
+  const el = sceneRefMap[nextKey]?.value
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
 const welcomeForPersona = computed(
   () => content.oneBody.welcome[persona.value] || content.oneBody.welcome.novice,
 )
@@ -775,7 +802,7 @@ watch(personaIsSet, (isSet) => {
           <h2 class="ckmh-headline">{{ content.oneBody.headline }}</h2>
           <p class="ckmh-welcome">{{ welcomeForPersona }}</p>
           <p class="ckmh-body">{{ content.oneBody.body }}</p>
-          <p class="ckmh-cue" aria-hidden="true">Continue ↓</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -818,10 +845,15 @@ watch(personaIsSet, (isSet) => {
             </li>
           </ul>
 
-          <p class="ckmh-cue" :class="{ 'is-ready': hasExplored }" aria-hidden="true">
+          <button
+            type="button"
+            class="ckmh-cue"
+            :class="{ 'is-ready': hasExplored }"
+            @click="scrollToNextScene"
+          >
             <span v-if="hasExplored">{{ content.threeTeammates.continueCue }} ↓</span>
             <span v-else>Tap each to learn more</span>
-          </p>
+          </button>
         </div>
       </section>
 
@@ -878,6 +910,7 @@ watch(personaIsSet, (isSet) => {
               <p class="ckmh-guess__answer-sub">
                 {{ content.guess.answerSubLine }}
               </p>
+              <button type="button" class="ckmh-cue is-ready" @click="scrollToNextScene">Continue ↓</button>
             </div>
           </Transition>
         </div>
@@ -903,6 +936,7 @@ watch(personaIsSet, (isSet) => {
               </li>
             </ul>
             <p class="ckmh-guess__closing">{{ content.guess.closing }}</p>
+            <button type="button" class="ckmh-cue is-ready" @click="scrollToNextScene">Continue ↓</button>
           </div>
         </div>
       </section>
@@ -917,7 +951,7 @@ watch(personaIsSet, (isSet) => {
           <p class="ckmh-overline">{{ content.vennIntro.overline }}</p>
           <h2 class="ckmh-headline">{{ content.vennIntro.headline }}</h2>
           <p class="ckmh-body">{{ content.vennIntro.body }}</p>
-          <p class="ckmh-cue" aria-hidden="true">Continue ↓</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -932,7 +966,7 @@ watch(personaIsSet, (isSet) => {
           <p class="ckmh-overline">{{ content.connections[0].overline }}</p>
           <h2 class="ckmh-headline">{{ content.connections[0].headline }}</h2>
           <p class="ckmh-body">{{ content.connections[0].body }}</p>
-          <p class="ckmh-cue" aria-hidden="true">Continue ↓</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -946,7 +980,7 @@ watch(personaIsSet, (isSet) => {
           <p class="ckmh-overline">{{ content.connections[1].overline }}</p>
           <h2 class="ckmh-headline">{{ content.connections[1].headline }}</h2>
           <p class="ckmh-body">{{ content.connections[1].body }}</p>
-          <p class="ckmh-cue" aria-hidden="true">Continue ↓</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -960,7 +994,7 @@ watch(personaIsSet, (isSet) => {
           <p class="ckmh-overline">{{ content.connections[2].overline }}</p>
           <h2 class="ckmh-headline">{{ content.connections[2].headline }}</h2>
           <p class="ckmh-body">{{ content.connections[2].body }}</p>
-          <p class="ckmh-cue" aria-hidden="true">Continue ↓</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -981,7 +1015,7 @@ watch(personaIsSet, (isSet) => {
               {{ content.shift.bodyHope }}
             </p>
           </div>
-          <p class="ckmh-cue" aria-hidden="true">Continue ↓</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -995,6 +1029,7 @@ watch(personaIsSet, (isSet) => {
           <p class="ckmh-overline">{{ content.ckmStages.intro.overline }}</p>
           <h2 class="ckmh-headline">{{ content.ckmStages.intro.headline }}</h2>
           <p class="ckmh-body">{{ content.ckmStages.intro.body }}</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -1008,6 +1043,7 @@ watch(personaIsSet, (isSet) => {
           <h2 class="ckmh-headline">{{ content.ckmStages.stages[0].headline }}</h2>
           <p class="ckmh-body">{{ content.ckmStages.stages[0].body }}</p>
           <p class="ckmh-stage__what-helps">{{ content.ckmStages.stages[0].whatHelps }}</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -1021,6 +1057,7 @@ watch(personaIsSet, (isSet) => {
           <h2 class="ckmh-headline">{{ content.ckmStages.stages[1].headline }}</h2>
           <p class="ckmh-body">{{ content.ckmStages.stages[1].body }}</p>
           <p class="ckmh-stage__what-helps">{{ content.ckmStages.stages[1].whatHelps }}</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -1034,6 +1071,7 @@ watch(personaIsSet, (isSet) => {
           <h2 class="ckmh-headline">{{ content.ckmStages.stages[2].headline }}</h2>
           <p class="ckmh-body">{{ content.ckmStages.stages[2].body }}</p>
           <p class="ckmh-stage__what-helps">{{ content.ckmStages.stages[2].whatHelps }}</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -1047,6 +1085,7 @@ watch(personaIsSet, (isSet) => {
           <h2 class="ckmh-headline">{{ content.ckmStages.stages[3].headline }}</h2>
           <p class="ckmh-body">{{ content.ckmStages.stages[3].body }}</p>
           <p class="ckmh-stage__what-helps">{{ content.ckmStages.stages[3].whatHelps }}</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -1061,6 +1100,7 @@ watch(personaIsSet, (isSet) => {
           <p class="ckmh-body">{{ content.ckmStages.stages[4].body }}</p>
           <p class="ckmh-stage__what-helps">{{ content.ckmStages.stages[4].whatHelps }}</p>
           <p class="ckmh-stage__closing">{{ content.ckmStages.stages[4].closing }}</p>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -1126,6 +1166,7 @@ watch(personaIsSet, (isSet) => {
               </Transition>
             </li>
           </ul>
+          <button type="button" class="ckmh-cue" @click="scrollToNextScene">Continue ↓</button>
         </div>
       </section>
 
@@ -1258,6 +1299,12 @@ watch(personaIsSet, (isSet) => {
 }
 
 .ckmh-cue {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: block;
   font-family: inherit;
   font-weight: 600;
   font-size: 0.78rem;
@@ -1266,6 +1313,12 @@ watch(personaIsSet, (isSet) => {
   color: var(--ink-faint);
   margin: 4rem 0 0;
   transition: color 250ms ease;
+}
+
+.ckmh-cue:hover,
+.ckmh-cue:focus-visible {
+  color: var(--accent);
+  outline: none;
 }
 
 .ckmh-cue.is-ready {
